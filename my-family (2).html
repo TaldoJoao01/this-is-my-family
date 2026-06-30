@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>This Is My Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161D29; --bg2:#0F141D;
+    --paper:#FBF6EC; --paper2:#F5EEDe;
+    --ink:#2E2418; --ink-soft:#6b5d4d;
+    --accent:#FF8A5B; --accent2:#FFD166;
+    --muted:#A9B7CC; --string:#5b4a3a;
+    --line-light:rgba(255,209,102,.55);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; background:var(--bg); color:var(--muted); font-family:'Quicksand',sans-serif; overflow-x:hidden; position:relative;}
+  h1,.hand{font-family:'Caveat',cursive;}
+  [contenteditable]{outline:none; border-radius:6px; transition:background .2s;}
+  [contenteditable]:hover{background:rgba(255,209,102,.12);}
+  [contenteditable]:focus{background:rgba(255,209,102,.22);}
+  ::selection{background:var(--accent2); color:var(--ink);}
+
+  #fireflies{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  main{position:relative; z-index:1;}
+
+  #topbar{position:fixed; top:0; left:0; right:0; z-index:50;}
+  #hint{background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#2E2418; font-weight:600; font-size:13px;
+    padding:9px 16px; text-align:center; display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap;}
+  #hint button{background:rgba(255,255,255,.5); border:none; border-radius:999px; width:22px;height:22px; cursor:pointer; font-weight:700;}
+  #progress-wrap{background:var(--bg2); padding:6px 16px; display:flex; align-items:center; gap:10px; font-size:11px; color:var(--muted);}
+  #progress-track{flex:1; height:6px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;}
+  #progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .4s ease;}
+
+  #navdots{position:fixed; right:18px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:14px; z-index:40;}
+  #navdots a{width:13px;height:13px;border-radius:50%; background:rgba(255,255,255,.25); display:block; position:relative;
+    transition:background .25s, transform .25s, border .25s; background-size:cover; background-position:center;}
+  #navdots a:hover, #navdots a.active{ transform:scale(1.35); box-shadow:0 0 0 2px var(--accent2);}
+  #navdots a span{position:absolute; right:22px; top:50%; transform:translateY(-50%); white-space:nowrap; font-size:12px; color:var(--ink);
+    background:var(--paper); padding:3px 9px; border-radius:6px; opacity:0; pointer-events:none; transition:opacity .2s; font-weight:600;}
+  #navdots a:hover span{opacity:1;}
+  @media(max-width:780px){ #navdots{display:none;} }
+
+  #toolbar{position:fixed; bottom:18px; left:18px; z-index:45; display:flex; gap:8px; flex-wrap:wrap; max-width:90vw;}
+  #toolbar button{background:var(--paper); color:var(--ink); border:none; border-radius:999px; padding:9px 14px; font-size:12.5px;
+    font-weight:700; cursor:pointer; box-shadow:0 8px 20px rgba(0,0,0,.4); font-family:'Quicksand';}
+  #toolbar button:hover{ background:var(--accent2); }
+  #toolbar button.tour-active{ background:var(--accent); color:#fff; }
+
+  .hero{min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    padding:130px 20px 40px;
+    background:radial-gradient(circle at 20% 20%, rgba(255,138,91,.12), transparent 45%),
+      radial-gradient(circle at 80% 75%, rgba(255,209,102,.10), transparent 50%),
+      linear-gradient(180deg,var(--bg2),var(--bg));
+    position:relative;}
+  .eyebrow{color:var(--accent2); font-size:13px; letter-spacing:.18em; text-transform:uppercase; font-weight:600; margin-bottom:10px;}
+  .hero h1{font-size:clamp(48px,9vw,108px); color:var(--paper); margin:0 0 6px; line-height:1;}
+  .hero p.sub{color:var(--muted); font-size:17px; max-width:480px; margin:0 auto 36px;}
+  .scrolldown{margin-top:46px; color:var(--muted); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:6px;
+    animation:bob 2s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+
+  .garland{position:relative; max-width:980px; margin:0 auto; padding:40px 20px 100px;}
+  .garland svg{position:absolute; left:0; top:0; z-index:0; pointer-events:none;}
+
+  .member{position:relative; z-index:1; display:flex; width:100%; margin:90px 0; opacity:0; transform:translateY(40px);
+    transition:opacity .7s ease, transform .7s ease;}
+  .member.visible{opacity:1; transform:translateY(0);}
+  .member.left{justify-content:flex-start;}
+  .member.right{justify-content:flex-end;}
+  .member .bulb{position:absolute; top:46px; left:50%; transform:translateX(-50%); width:14px;height:14px;border-radius:50%;
+    background:var(--accent2); box-shadow:0 0 16px 4px var(--line-light); animation:glow 2.4s ease-in-out infinite;}
+  @media(max-width:780px){ .member .bulb{left:28px;} .member.left,.member.right{justify-content:flex-start;} .garland svg{left:28px;} }
+  @keyframes glow{0%,100%{box-shadow:0 0 10px 2px var(--line-light)}50%{box-shadow:0 0 22px 7px var(--line-light)}}
+
+  .card-wrap{width:min(340px,80vw); perspective:1600px;}
+  .card-wrap.small{width:min(250px,80vw);}
+  .card{position:relative; width:100%; min-height:430px; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.2,.7,.2,1); cursor:pointer;}
+  .card-wrap.small .card{min-height:360px;}
+  .card.flipped{transform:rotateY(180deg);}
+  .face{position:absolute; inset:0; backface-visibility:hidden; background:var(--paper); border-radius:6px;
+    box-shadow:0 18px 38px rgba(0,0,0,.45), 0 2px 0 rgba(255,255,255,.4) inset; padding:16px 16px 20px;}
+  .member.left .card-wrap{transform:rotate(-3deg);}
+  .member.right .card-wrap{transform:rotate(3deg);}
+
+  .photo{width:100%; aspect-ratio:1/1; border-radius:3px; background:var(--paper2); background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;}
+  .photo .placeholder{color:var(--ink-soft); font-size:13px; text-align:center; padding:10px; line-height:1.5;}
+  .photo .camera{font-size:30px; display:block; margin-bottom:6px;}
+  .upload-btn{position:absolute; bottom:8px; right:8px; background:var(--ink); color:var(--paper); border:none; border-radius:999px;
+    width:34px; height:34px; font-size:15px; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,.35); z-index:3;}
+  .caption{color:var(--ink); font-size:25px; text-align:center; margin-top:14px; min-height:30px;}
+  .card-wrap.small .caption{font-size:22px;}
+  .flip-hint{text-align:center; color:var(--ink-soft); font-size:11.5px; margin-top:6px; letter-spacing:.04em;}
+
+  .back{transform:rotateY(180deg); display:flex; flex-direction:column; justify-content:center; gap:10px; background:var(--paper); position:relative;}
+  .back h3{font-family:'Caveat'; font-size:28px; color:var(--ink); margin:0 0 2px; text-align:center;}
+  .listen-btn{position:absolute; top:10px; right:10px; background:var(--accent); color:#fff; border:none; border-radius:999px;
+    width:30px;height:30px; font-size:13px; cursor:pointer;}
+  .field{font-size:13px; color:var(--ink);}
+  .field b{color:var(--accent); font-weight:700; display:block; font-size:10px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:2px;}
+  .field [contenteditable]{display:block; padding:3px 2px; border-bottom:1px dashed rgba(46,36,24,.25);}
+
+  #quiz-overlay{position:fixed; inset:0; background:rgba(10,13,20,.85); backdrop-filter:blur(4px); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;}
+  #quiz-overlay.hidden{display:none;}
+  #quiz-box{background:var(--paper); color:var(--ink); width:min(440px,92vw); border-radius:10px; padding:28px 26px;
+    box-shadow:0 30px 70px rgba(0,0,0,.6); text-align:center;}
+  #quiz-box h3{font-family:'Caveat'; font-size:34px; margin:0 0 4px;}
+  #quiz-progress{font-size:12px; color:var(--ink-soft); margin-bottom:16px;}
+  #quiz-question{font-size:18px; font-weight:600; margin-bottom:18px;}
+  #quiz-options{display:flex; flex-direction:column; gap:10px;}
+  .quiz-opt{background:var(--paper2); border:2px solid transparent; border-radius:8px; padding:12px 14px; font-size:14px;
+    font-family:'Quicksand'; cursor:pointer; text-align:left; transition:border-color .2s, background .2s;}
+  .quiz-opt:hover{border-color:var(--accent);}
+  .quiz-opt.correct{background:#cdeccb; border-color:#4a9b46;}
+  .quiz-opt.wrong{background:#f3c9c2; border-color:#c0392b;}
+  #quiz-close{margin-top:18px; background:none; border:none; color:var(--ink-soft); font-size:12px; cursor:pointer; text-decoration:underline;}
+  #quiz-score{font-size:22px; font-family:'Caveat'; margin-bottom:10px;}
+
+  footer{text-align:center; padding:50px 20px 70px; color:var(--ink-soft); font-size:13px;}
+  footer .hand{font-size:26px; color:var(--paper); display:block; margin-bottom:8px;}
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+
+<canvas id="fireflies"></canvas>
+
+<div id="topbar">
+  <div id="hint">
+    <span>📸 Click photos to upload &nbsp;•&nbsp; ✏️ click text to edit &nbsp;•&nbsp; 🔄 click a card to flip &nbsp;•&nbsp; 🔊 listen in English</span>
+    <button onclick="document.getElementById('hint').remove()">✕</button>
+  </div>
+  <div id="progress-wrap">
+    <span id="progress-label">Family profile: 0% complete</span>
+    <div id="progress-track"><div id="progress-fill"></div></div>
+  </div>
+</div>
+
+<nav id="navdots">
+  <a href="#hero" data-label="Home"><span>Home</span></a>
+  <a href="#mom" data-label="Mom"><span>Mom</span></a>
+  <a href="#dad" data-label="Dad"><span>Dad</span></a>
+  <a href="#brother" data-label="Brother"><span>Brother</span></a>
+  <a href="#sister"><span>Sister</span></a>
+  <a href="#brother2"><span>Brother 2</span></a>
+</nav>
+<main>
+<section class="hero" id="hero">
+  <div class="eyebrow">English Class Project</div>
+  <h1>This Is My Family</h1>
+  <p class="sub" contenteditable="true">Scroll down the garland to meet everyone — click each photo to make it yours.</p>
+
+  <div class="card-wrap" style="transform:rotate(-2deg)">
+    <div class="photo"
+     style="aspect-ratio:4/3; background-image:url('images/family.jpg');"
+     id="photo-hero">
+</div>
+    <div class="caption hand" id="cap-hero" data-placeholder="This is my family..." contenteditable="true">This is my family...</div>
+  </div>
+
+  <div class="scrolldown">↓ scroll to meet everyone ↓</div>
+</section>
+
+<div class="garland" id="garland"></div>
+
+<div id="quiz-overlay" class="hidden">
+  <div id="quiz-box">
+    <h3>Family Quiz</h3>
+    <div id="quiz-progress"></div>
+    <div id="quiz-question"></div>
+    <div id="quiz-options"></div>
+    <div id="quiz-score" style="display:none"></div>
+    <button id="quiz-close" onclick="closeQuiz()">Close</button>
+  </div>
+</div>
+
+<footer>
+  <span class="hand">Made with ❤️ for English class</span>
+  Tip: click "Save progress" before you close the tab, then "Load saved file" next time to pick up right where you left off.
+</footer>
+</main>
+
+<script>
+/* ---------------- ambient fireflies background ---------------- */
+const canvas = document.getElementById('fireflies');
+const ctx = canvas.getContext('2d');
+let W,H;
+function resizeCanvas(){ W=canvas.width=window.innerWidth; H=canvas.height=document.documentElement.scrollHeight; }
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+const flies = Array.from({length:38}, ()=>({
+  x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.8+0.6,
+  speed:Math.random()*0.3+0.05, phase:Math.random()*Math.PI*2, drift:Math.random()*0.4-0.2
+}));
+function animateFlies(t){
+  ctx.clearRect(0,0,W,H);
+  flies.forEach(f=>{
+    f.y -= f.speed;
+    f.x += Math.sin(t/2000 + f.phase)*f.drift;
+    if(f.y < -10){ f.y = H+10; f.x = Math.random()*W; }
+    const alpha = 0.35 + 0.45*Math.sin(t/900 + f.phase);
+    const grad = ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r*6);
+    grad.addColorStop(0, `rgba(255,209,102,${Math.max(0,alpha)})`);
+    grad.addColorStop(1, 'rgba(255,209,102,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(f.x,f.y,f.r*6,0,Math.PI*2); ctx.fill();
+  });
+  requestAnimationFrame(animateFlies);
+}
+requestAnimationFrame(animateFlies);
+
+/* ---------------- shared card builder (members + pets) ---------------- */
+const familyData = {
+  mom: {
+    name: "Marlei Lurdes Pereira",
+    age: "56",
+    from: "Palmeiras Das Missões",
+    occupation: "Terapia",
+    characteristics: "Beautiful"
+  },
+
+  dad: {
+    name: "Valdir Henn",
+    age: "57",
+    from: "Sinimbu",
+    occupation: "Servidor Publico",
+    characteristics: "Strong"
+  },
+
+  brother: {
+    name: "Ricardo Ribeiro",
+    age: "34",
+    from: "Santa Cruz do Sul",
+    occupation: "Cabelereiro",
+    characteristics: "funny"
+  },
+
+  sister: {
+    name: "Sonia Scherer",
+    age: "39",
+    from: "Santa Cruz do Sul",
+    occupation: "Massoterapeuta",
+    characteristics: "Creative"
+  },
+
+  brother2: {
+    name: "Juliano Scherer",
+    age: "41",
+    from: "Santa Cruz do Sul",
+    occupation: "Supervisor de vendas",
+    characteristics: "Strong"
+  }
+};
+
+function fieldsHTML(id){
+  const person = familyData[id];
+
+  return `
+    <div class="field">
+      <b>Name</b>
+      <span id="f-${id}-name" contenteditable="true" onclick="event.stopPropagation()">
+        ${person ? person.name : "Click to add name"}
+      </span>
+    </div>
+
+    <div class="field">
+      <b>Age</b>
+      <span id="f-${id}-age" contenteditable="true" onclick="event.stopPropagation()">
+        ${person ? person.age : "Click to add age"}
+      </span>
+    </div>
+
+    <div class="field">
+      <b>From</b>
+      <span id="f-${id}-from" contenteditable="true" onclick="event.stopPropagation()">
+        ${person ? person.from : "Click to add hometown"}
+      </span>
+    </div>
+
+    <div class="field">
+      <b>Occupation</b>
+      <span id="f-${id}-occupation" contenteditable="true" onclick="event.stopPropagation()">
+        ${person ? person.occupation : "Click to add occupation"}
+      </span>
+    </div>
+
+    <div class="field">
+      <b>Characteristics (appearance and adjectives)</b>
+      <span id="f-${id}-characteristics" contenteditable="true" onclick="event.stopPropagation()">
+        ${person ? person.characteristics : "Click to add characteristics"}
+      </span>
+    </div>
+  `;
+}
+function cardHTML(id, caption, small){
+  return `
+    <div class="card-wrap ${small?'small':''}">
+      <div class="card" onclick="handleCardClick(event,this)">
+        <div class="face front">
+          <div class="photo"
+     id="photo-${id}"
+     style="background-image:url('images/${id}.jpg')">
+</div>
+          <div class="caption hand" id="cap-${id}" data-placeholder="${caption}" contenteditable="true" onclick="event.stopPropagation()">${caption}</div>
+          <div class="flip-hint">tap card to flip ↻</div>
+        </div>
+        <div class="face back">
+          <button class="listen-btn" onclick="event.stopPropagation(); speak(narratePerson('${id}'))" title="Listen in English">🔊</button>
+          <h3>Get to know them</h3>
+          ${fieldsHTML(id)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+function handleCardClick(e, card){ card.classList.toggle("flipped"); }
+
+/* ---------------- garland members ---------------- */
+const members = [
+  {id:"mom", caption:"This is my mom..."},
+  {id:"dad", caption:"This is my dad..."},
+  {id:"brother", caption:"This is my brother..."},
+  {id:"sister", caption:"This is my sister..."},
+  {id:"brother2", caption:"This is my brother..."},
+];
+const sides = [
+    "left",
+    "right",
+    "left",
+    "right",
+    "left"
+];
+const garland = document.getElementById("garland");
+members.forEach((m,i)=>{
+  const el = document.createElement("div");
+  el.className = `member ${sides[i]}`;
+  el.id = m.id;
+  el.innerHTML = `<div class="bulb"></div>` + cardHTML(m.id, m.caption, false);
+  garland.appendChild(el);
+});
+
+/* ---------------- scroll-drawn glowing string ---------------- */
+let glowPath, pathLength;
+function buildString(){
+  const old = garland.querySelector("svg"); if(old) old.remove();
+  const h = garland.scrollHeight;
+  const isMobile = window.innerWidth <= 780;
+  const x = isMobile ? 28 : (garland.clientWidth/2);
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS,"svg");
+  svg.setAttribute("width", garland.clientWidth);
+  svg.setAttribute("height", h);
+  svg.setAttribute("viewBox", `0 0 ${garland.clientWidth} ${h}`);
+  const base = document.createElementNS(svgNS,"path");
+  base.setAttribute("d", `M${x},0 L${x},${h}`);
+  base.setAttribute("stroke", "#5b4a3a"); base.setAttribute("stroke-width","3");
+  base.setAttribute("opacity","0.5"); base.setAttribute("fill","none");
+  svg.appendChild(base);
+  glowPath = document.createElementNS(svgNS,"path");
+  glowPath.setAttribute("d", `M${x},0 L${x},${h}`);
+  glowPath.setAttribute("stroke", "url(#g1)"); glowPath.setAttribute("stroke-width","3"); glowPath.setAttribute("fill","none");
+  glowPath.style.filter = "drop-shadow(0 0 6px rgba(255,209,102,.8))";
+  const defs = document.createElementNS(svgNS,"defs");
+  const grad = document.createElementNS(svgNS,"linearGradient");
+  grad.setAttribute("id","g1"); grad.setAttribute("x1","0"); grad.setAttribute("y1","0"); grad.setAttribute("x2","0"); grad.setAttribute("y2","1");
+  grad.innerHTML = `<stop offset="0%" stop-color="#FFD166"/><stop offset="100%" stop-color="#FF8A5B"/>`;
+  defs.appendChild(grad); svg.appendChild(defs);
+  svg.appendChild(glowPath);
+  garland.insertBefore(svg, garland.firstChild);
+  pathLength = glowPath.getTotalLength();
+  glowPath.style.strokeDasharray = pathLength;
+  glowPath.style.strokeDashoffset = pathLength;
+}
+function onScroll(){
+  if(!glowPath) return;
+  const rect = garland.getBoundingClientRect();
+  const vh = window.innerHeight;
+  let progress = (vh*0.85 - rect.top) / rect.height;
+  progress = Math.min(1, Math.max(0, progress));
+  glowPath.style.strokeDashoffset = pathLength*(1-progress);
+}
+window.addEventListener('scroll', ()=> requestAnimationFrame(onScroll));
+window.addEventListener('resize', ()=>{ buildString(); resizeCanvas(); onScroll(); });
+
+/* ---------------- photo upload ---------------- */
+function getBg(id){
+  const el = document.getElementById(id);
+  const bg = el && el.style.backgroundImage;
+  if(!bg || bg === 'none' || bg === '') return null;
+  return bg.slice(5,-2);
+}
+function setBg(id, url){
+  if(!url) return;
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.style.backgroundImage = `url(${url})`;
+  const ph = el.querySelector('.placeholder');
+  if(ph) ph.style.display = 'none';
+}
+function triggerUpload(targetId){
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = "image/*";
+  input.onchange = (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{ setBg(targetId, reader.result); updateNavThumb(targetId, reader.result); computeCompletion(); };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+function updateNavThumb(targetId, url){
+  const id = targetId.replace('photo-','');
+  const dot = document.querySelector(`#navdots a[href="#${id}"]`);
+  if(dot){ dot.style.backgroundImage = `url(${url})`; }
+}
+
+/* ---------------- scroll reveal ---------------- */
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{ if(en.isIntersecting) en.target.classList.add("visible"); });
+},{threshold:0.2});
+document.querySelectorAll(".member").forEach(m=>revealObserver.observe(m));
+
+/* ---------------- nav dot active state ---------------- */
+const sections = [
+    "hero",
+    "mom",
+    "dad",
+    "brother",
+    "sister",
+    "brother2"
+].map(id=>document.getElementById(id));
+const dots = document.querySelectorAll("#navdots a");
+const navObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      dots.forEach(d=>d.classList.remove("active"));
+      const dot = document.querySelector(`#navdots a[href="#${en.target.id}"]`);
+      if(dot) dot.classList.add("active");
+    }
+  });
+},{threshold:0.5});
+sections.forEach(s=> s && navObserver.observe(s));
+
+/* ---------------- tilt on hover ---------------- */
+document.body.addEventListener("mousemove",(e)=>{
+  document.querySelectorAll(".card-wrap").forEach(wrap=>{
+    const r = wrap.getBoundingClientRect();
+    if(e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom){ return; }
+    const base = wrap.dataset.base || "";
+    const x = (e.clientX - r.left)/r.width - 0.5;
+    const y = (e.clientY - r.top)/r.height - 0.5;
+    wrap.style.transform = `${base} rotateX(${(-y*8)}deg) rotateY(${x*8}deg)`;
+  });
+});
+function initTiltBase(){
+  document.querySelectorAll(".card-wrap").forEach(wrap=>{
+    if(!wrap.dataset.base){
+      wrap.dataset.base = getComputedStyle(wrap).transform === 'none' ? '' : wrap.style.transform || '';
+      wrap.addEventListener("mouseleave", ()=>{ wrap.style.transform = wrap.dataset.base; });
+    }
+  });
+}
+setInterval(initTiltBase, 1000);
+
+/* ---------------- completion meter + confetti ---------------- */
+let celebrated = false;
+function computeCompletion(){
+  const fields = document.querySelectorAll('[data-placeholder]');
+  let filled = 0;
+  fields.forEach(f=>{ if(f.textContent.trim() !== f.dataset.placeholder.trim() && f.textContent.trim() !== '') filled++; });
+  const photos = document.querySelectorAll('.photo');
+  let filledPhotos = 0;
+  photos.forEach(p=>{ const bg=p.style.backgroundImage; if(bg && bg!=='none' && bg!=='') filledPhotos++; });
+  const total = fields.length + photos.length;
+  const done = filled + filledPhotos;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-label').textContent = `Family profile: ${pct}% complete`;
+  if(pct === 100 && !celebrated){ celebrated = true; burstConfetti(); }
+  if(pct < 100) celebrated = false;
+}
+document.addEventListener('input', (e)=>{ if(e.target.hasAttribute('contenteditable')) computeCompletion(); });
+function burstConfetti(){
+  const colors = ['#FF8A5B','#FFD166','#FBF6EC','#A9B7CC'];
+  for(let i=0;i<90;i++){
+    const el = document.createElement('div');
+    const size = Math.random()*8+5;
+    el.style.cssText = `position:fixed; top:-20px; left:${Math.random()*100}vw; width:${size}px; height:${size*0.6}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]}; z-index:200; pointer-events:none; border-radius:2px;
+      transform:rotate(${Math.random()*360}deg);`;
+    document.body.appendChild(el);
+    const duration = Math.random()*1500+1800;
+    const drift = (Math.random()*200-100);
+    el.animate([
+      { transform:`translate(0,0) rotate(0deg)`, opacity:1 },
+      { transform:`translate(${drift}px, 100vh) rotate(${Math.random()*720}deg)`, opacity:0.9 }
+    ], { duration, easing:'cubic-bezier(.2,.6,.4,1)' });
+    setTimeout(()=> el.remove(), duration+50);
+  }
+}
+
+/* ---------------- English narration + family tour (text-to-speech) ---------------- */
+function fieldText(id){
+  const el = document.getElementById(id); if(!el) return '';
+  const v = el.textContent.trim(); const ph = el.dataset.placeholder;
+  return (v && v !== ph) ? v : '';
+}
+function narratePerson(id){
+  const cap = fieldText('cap-'+id).replace(/\.\.\.$/, '');
+  const parts = [];
+  if(cap) parts.push(cap + '.');
+  const name = fieldText('f-'+id+'-name'); if(name) parts.push(`Name: ${name}.`);
+  const age = fieldText('f-'+id+'-age'); if(age) parts.push(`Age: ${age}.`);
+  const from = fieldText('f-'+id+'-from'); if(from) parts.push(`From: ${from}.`);
+  const occ = fieldText('f-'+id+'-occupation'); if(occ) parts.push(`Occupation: ${occ}.`);
+  const ch = fieldText('f-'+id+'-characteristics'); if(ch) parts.push(`Characteristics: ${ch}.`);
+  return parts.join(' ') || (cap ? cap+'.' : '');
+}
+function speak(text){
+  return new Promise(resolve=>{
+    if(!text || !('speechSynthesis' in window)){ resolve(); return; }
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US'; u.rate = 0.95;
+    u.onend = resolve; u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+let touring = false;
+async function playTour(){
+  if(!('speechSynthesis' in window)){ alert("Your browser doesn't support text-to-speech."); return; }
+  touring = true;
+  const btn = document.getElementById('tour-btn');
+  btn.textContent = '⏹ Stop tour'; btn.classList.add('tour-active');
+  const stops = ["hero", ...members.map(m=>m.id)];
+  for(const id of stops){
+    if(!touring) break;
+    const el = document.getElementById(id);
+    if(!el) continue;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    await wait(700);
+    if(!touring) break;
+    const text = id === 'hero' ? (fieldText('cap-hero') || 'This is my family.')
+               : narratePerson(id);
+    await speak(text);
+  }
+  touring = false;
+  btn.textContent = '▶ Play family tour (English)'; btn.classList.remove('tour-active');
+}
+function stopTour(){ touring = false; speechSynthesis.cancel();
+  const btn = document.getElementById('tour-btn'); btn.textContent = '▶ Play family tour (English)'; btn.classList.remove('tour-active'); }
+function toggleTour(){ touring ? stopTour() : playTour(); }
+
+/* ---------------- quiz mode ---------------- */
+const QUIZ_FIELDS = [
+  {key:'age', label:'age'},
+  {key:'from', label:'hometown'},
+  {key:'occupation', label:'occupation'},
+  {key:'characteristics', label:'characteristics'},
+];
+let quizQueue = [], quizIndex = 0, quizScore = 0;
+
+function relationLabel(id){
+  const cap = fieldText('cap-'+id) || '';
+  const m = cap.match(/my (\w+)/i);
+  return m ? m[1] : id;
+}
+function buildQuizQueue(){
+  const pool = [];
+  members.forEach(m=>{
+    QUIZ_FIELDS.forEach(f=>{
+      const val = fieldText('f-'+m.id+'-'+f.key);
+      if(val) pool.push({id:m.id, field:f, value:val});
+    });
+  });
+  return pool;
+}
+function openQuiz(){
+  const pool = buildQuizQueue();
+  if(pool.length < 2){
+    alert("Fill in a few more details first (at least two people need info) so I can build good questions!");
+    return;
+  }
+  quizQueue = pool.sort(()=>Math.random()-0.5).slice(0,5);
+  quizIndex = 0; quizScore = 0;
+  document.getElementById('quiz-overlay').classList.remove('hidden');
+  document.getElementById('quiz-score').style.display = 'none';
+  showQuizQuestion();
+}
+function closeQuiz(){ document.getElementById('quiz-overlay').classList.add('hidden'); speechSynthesis.cancel(); }
+function showQuizQuestion(){
+  if(quizIndex >= quizQueue.length){ finishQuiz(); return; }
+  const q = quizQueue[quizIndex];
+  document.getElementById('quiz-progress').textContent = `Question ${quizIndex+1} of ${quizQueue.length}`;
+  const relation = relationLabel(q.id);
+  document.getElementById('quiz-question').textContent = `What is ${capitalize(relation)}'s ${q.field.label}?`;
+  document.getElementById('quiz-score').style.display = 'none';
+  let decoys = quizQueue
+    .filter(o=> o.field.key === q.field.key && o.value !== q.value)
+    .map(o=>o.value);
+  decoys = [...new Set(decoys)];
+  while(decoys.length < 3) decoys.push("Not mentioned");
+  decoys = decoys.sort(()=>Math.random()-0.5).slice(0,3);
+  const options = [q.value, ...decoys].sort(()=>Math.random()-0.5);
+  const optWrap = document.getElementById('quiz-options');
+  optWrap.innerHTML = '';
+  options.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt'; btn.textContent = opt;
+    btn.onclick = ()=> answerQuiz(btn, opt === q.value);
+    optWrap.appendChild(btn);
+  });
+}
+function answerQuiz(btn, isCorrect){
+  document.querySelectorAll('.quiz-opt').forEach(b=> b.onclick = null);
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if(isCorrect) quizScore++;
+  setTimeout(()=>{ quizIndex++; showQuizQuestion(); }, 800);
+}
+function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function finishQuiz(){
+  document.getElementById('quiz-question').textContent = '';
+  document.getElementById('quiz-options').innerHTML = '';
+  document.getElementById('quiz-progress').textContent = '';
+  const scoreEl = document.getElementById('quiz-score');
+  scoreEl.style.display = 'block';
+  scoreEl.textContent = `You scored ${quizScore} / ${quizQueue.length}! 🎉`;
+  if(quizScore === quizQueue.length) burstConfetti();
+}
+
+/* ---------------- save / load progress ---------------- */
+function collectPersonData(id){
+  return {
+    photo:getBg('photo-'+id), caption:document.getElementById('cap-'+id).textContent,
+    name:document.getElementById('f-'+id+'-name').textContent,
+    age:document.getElementById('f-'+id+'-age').textContent,
+    from:document.getElementById('f-'+id+'-from').textContent,
+    occupation:document.getElementById('f-'+id+'-occupation').textContent,
+    characteristics:document.getElementById('f-'+id+'-characteristics').textContent,
+  };
+}
+function collectData(){
+  const data = { heroPhoto:getBg('photo-hero'), heroCaption:document.getElementById('cap-hero').textContent, members:{} };
+  members.forEach(m=> data.members[m.id] = collectPersonData(m.id));
+  return data;
+}
+function saveData(){
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'my-family-data.json'; a.click();
+}
+function setText(id, val){
+  if(val === undefined || val === null) return;
+  const el = document.getElementById(id);
+  if(el && val.trim() !== '') el.textContent = val;
+}
+function applyPersonData(id, d){
+  if(!d) return;
+  setBg('photo-'+id, d.photo);
+  setText('cap-'+id, d.caption);
+  setText('f-'+id+'-name', d.name);
+  setText('f-'+id+'-age', d.age);
+  setText('f-'+id+'-from', d.from);
+  setText('f-'+id+'-occupation', d.occupation);
+  setText('f-'+id+'-characteristics', d.characteristics);
+  if(d.photo) updateNavThumb('photo-'+id, d.photo);
+}
+function loadFile(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    let data;
+    try{ data = JSON.parse(reader.result); } catch(err){ alert('That file could not be read.'); return; }
+    setBg('photo-hero', data.heroPhoto);
+    setText('cap-hero', data.heroCaption);
+    members.forEach(m=> applyPersonData(m.id, data.members && data.members[m.id]));
+    computeCompletion();
+    setTimeout(buildString, 100);
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- init ---------------- */
+window.addEventListener('load', ()=>{ buildString(); resizeCanvas(); onScroll(); computeCompletion(); });
+</script>
+</body>
+</html>
